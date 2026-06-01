@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monthly Business Report — {{ month_name }} {{ year }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; color: #111827; }
+    .wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .header { background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); color: #fff; border-radius: 12px; padding: 32px 24px; margin-bottom: 20px; text-align: center; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 14px; opacity: .85; margin-top: 6px; }
+    .section-title { font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kpi { background: #f9fafb; border-radius: 8px; padding: 14px; text-align: center; }
+    .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin-bottom: 6px; }
+    .kpi-value { font-size: 22px; font-weight: 700; color: #111827; }
+    .profit { color: #059669; }
+    .loss { color: #dc2626; }
+    .pl-box { border-radius: 10px; padding: 20px 24px; text-align: center; margin-top: 4px; }
+    .pl-box.profit-bg { background: #d1fae5; }
+    .pl-box.loss-bg { background: #fee2e2; }
+    .pl-label { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .pl-amount { font-size: 32px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f9fafb; padding: 8px 10px; text-align: left; font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    td { padding: 9px 10px; border-bottom: 1px solid #f3f4f6; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .badge-orange { background: #fff7ed; color: #c2410c; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 20px; padding-bottom: 16px; }
+    @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- Header -->
+  <div class="header">
+    <h1>📊 Monthly Business Report</h1>
+    <p>{{ month_name }} {{ year }} &nbsp;·&nbsp; Generated {{ generated_at }}</p>
+  </div>
+
+  <!-- P&L Summary -->
+  <div class="card">
+    <div class="section-title">Financial Overview</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Revenue</div>
+        <div class="kpi-value">PKR {{ "{:,.0f}".format(revenue) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Expenses</div>
+        <div class="kpi-value">PKR {{ "{:,.0f}".format(expenses) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Orders</div>
+        <div class="kpi-value">{{ total_orders }}</div>
+      </div>
+    </div>
+    <div class="pl-box {{ 'profit-bg' if net_profit >= 0 else 'loss-bg' }}" style="margin-top:16px;">
+      <div class="pl-label {{ 'profit' if net_profit >= 0 else 'loss' }}">{{ 'Net Profit' if net_profit >= 0 else 'Net Loss' }}</div>
+      <div class="pl-amount {{ 'profit' if net_profit >= 0 else 'loss' }}">PKR {{ "{:,.0f}".format(net_profit|abs) }}</div>
+    </div>
+  </div>
+
+  <!-- Machine Performance -->
+  <div class="card">
+    <div class="section-title">Machine Performance</div>
+    <table>
+      <thead>
+        <tr><th>Machine</th><th style="text-align:right;">Total Stitches</th></tr>
+      </thead>
+      <tbody>
+        {% for m in machine_performance %}
+        <tr>
+          <td>{{ m.machine_name }}</td>
+          <td style="text-align:right; font-weight:600;">{{ "{:,}".format(m.total_stitches) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" style="text-align:center;color:#9ca3af;">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Top Clients -->
+  <div class="card">
+    <div class="section-title">Top 3 Clients by Order Value</div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Client</th><th style="text-align:right;">Total (PKR)</th></tr>
+      </thead>
+      <tbody>
+        {% for i, c in top_clients|enumerate %}
+        <tr>
+          <td style="color:#9ca3af;">{{ i + 1 }}</td>
+          <td>{{ c.client_name }}</td>
+          <td style="text-align:right; font-weight:600;">{{ "{:,.0f}".format(c.total_value) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#9ca3af;">No data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Labour Summary -->
+  <div class="card">
+    <div class="section-title">Labour Salary Summary</div>
+    <table>
+      <thead>
+        <tr><th>Name</th><th style="text-align:right;">Salary</th><th style="text-align:right;">Advances</th><th style="text-align:right;">Net Payable</th></tr>
+      </thead>
+      <tbody>
+        {% for l in labour_summary %}
+        <tr>
+          <td>{{ l.name }}</td>
+          <td style="text-align:right;">{{ "{:,.0f}".format(l.monthly_salary) }}</td>
+          <td style="text-align:right; color:#dc2626;">{{ "{:,.0f}".format(l.total_advances) }}</td>
+          <td style="text-align:right; font-weight:700; color:#059669;">{{ "{:,.0f}".format(l.net_payable) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#9ca3af;">No active labour</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Low Stock Alert -->
+  {% if low_stock_materials %}
+  <div class="card" style="border-left: 4px solid #f97316;">
+    <div class="section-title" style="color:#c2410c;">⚠ Low Stock Alert</div>
+    <table>
+      <thead>
+        <tr><th>Material</th><th>Unit</th><th style="text-align:right;">Current</th><th style="text-align:right;">Minimum</th></tr>
+      </thead>
+      <tbody>
+        {% for m in low_stock_materials %}
+        <tr>
+          <td><span class="badge badge-orange">LOW</span> {{ m.name }}</td>
+          <td>{{ m.unit }}</td>
+          <td style="text-align:right; color:#dc2626; font-weight:600;">{{ m.current_stock }}</td>
+          <td style="text-align:right; color:#6b7280;">{{ m.minimum_stock_alert }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    This report was automatically generated by the Embroidery Management System.<br>
+    To change report settings, visit the Settings page.
+  </div>
+</div>
+</body>
+</html>
