@@ -46,7 +46,13 @@ export default function Orders() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 
-  const onSubmit = (data: Partial<Order>) => createMutation.mutate(data);
+  const onSubmit = (data: Partial<Order>) => {
+    // React Hook Form sends "" for unfilled inputs; strip them so Pydantic doesn't reject with 422
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== "" && v !== undefined)
+    ) as Partial<Order>;
+    createMutation.mutate(payload);
+  };
 
   if (isLoading) return <LoadingSpinner />;
 

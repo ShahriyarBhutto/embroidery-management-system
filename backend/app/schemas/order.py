@@ -1,7 +1,14 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, model_validator
+from typing import Optional, Any
 from datetime import date, datetime
 from decimal import Decimal
+
+
+def _strip_empty_strings(data: Any) -> Any:
+    """Convert empty strings to None so Pydantic doesn't reject them as invalid numbers/dates."""
+    if isinstance(data, dict):
+        return {k: (None if v == "" else v) for k, v in data.items()}
+    return data
 
 
 class OrderCreate(BaseModel):
@@ -18,6 +25,11 @@ class OrderCreate(BaseModel):
     deadline: Optional[date] = None
     notes: Optional[str] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_empty_strings(cls, data: Any) -> Any:
+        return _strip_empty_strings(data)
+
 
 class OrderUpdate(BaseModel):
     machine_id: Optional[int] = None
@@ -31,6 +43,11 @@ class OrderUpdate(BaseModel):
     status: Optional[str] = None
     deadline: Optional[date] = None
     notes: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_empty_strings(cls, data: Any) -> Any:
+        return _strip_empty_strings(data)
 
 
 class OrderOut(BaseModel):
